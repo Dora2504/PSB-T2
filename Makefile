@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99
+CFLAGS = -Wall -Wextra -std=c99 -g
 TARGET = memory_manager
 SOURCES = main.c mymemory.c
 
@@ -12,4 +12,7 @@ clean:
 run: $(TARGET)
 	./$(TARGET)
 
-.PHONY: clean run
+test: $(TARGET)
+	valgrind --leak-check=full ./$(TARGET)
+
+.PHONY: clean run test

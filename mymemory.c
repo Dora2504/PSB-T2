@@ -152,7 +152,7 @@ void mymemory_display(mymemory_t *memory) {
     }
 }
 
-// Exibe estatísticas
+// Exibe estatísticas CORRIGIDA
 void mymemory_stats(mymemory_t *memory) {
     if (!memory) {
         printf("Erro: memória não inicializada\n");
@@ -175,13 +175,42 @@ void mymemory_stats(mymemory_t *memory) {
         current = current->next;
     }
     
-    size_t free_memory = memory->total_size - total_allocated;
+    // CALCULA FRAGMENTOS E MAIOR BLOCO LIVRE CORRETAMENTE
+    current = memory->head;
+    void* current_pos = memory->pool;
     
-    // Versão simplificada para cálculo de fragmentos
-    if (free_memory > 0) {
-        largest_free_block = free_memory;
-        free_fragments = 1;
+    while (current != NULL) {
+        // Espaço livre antes desta alocação
+        size_t free_space = (char*)current->start - (char*)current_pos;
+        if (free_space > 0) {
+            free_fragments++;
+            if (free_space > largest_free_block) {
+                largest_free_block = free_space;
+            }
+        }
+        current_pos = (char*)current->start + current->size;
+        current = current->next;
     }
+    
+    // Espaço livre após a última alocação
+    size_t final_free_space = (char*)memory->pool + memory->total_size - (char*)current_pos;
+    if (final_free_space > 0) {
+        free_fragments++;
+        if (final_free_space > largest_free_block) {
+            largest_free_block = final_free_space;
+        }
+    }
+    
+    // Se não há fragmentos mas há memória livre, considera como 1 fragmento
+    if (free_fragments == 0) {
+        size_t free_memory = memory->total_size - total_allocated;
+        if (free_memory > 0) {
+            free_fragments = 1;
+            largest_free_block = free_memory;
+        }
+    }
+    
+    size_t free_memory = memory->total_size - total_allocated;
     
     printf("Total de alocações: %d\n", total_allocations);
     printf("Memória total alocada: %zu bytes\n", total_allocated);
